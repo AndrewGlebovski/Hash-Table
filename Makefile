@@ -11,16 +11,21 @@ BIN_DIR=binary
 SRC_DIR=source
 
 
-all: $(BIN_DIR) hash.exe
+all: $(BIN_DIR) run.exe
 
 
 # Завершает сборку
-hash.exe: $(addprefix $(BIN_DIR)/, main.o) 
-	$(COMPILER) $^ -o hash.exe
+run.exe: $(addprefix $(BIN_DIR)/, main.o hash_table.o) 
+	$(COMPILER) $^ -o $@
 
 
 # Предварительная сборка main.cpp
-$(BIN_DIR)/main.o: $(addprefix $(SRC_DIR)/, main.cpp)
+$(BIN_DIR)/main.o: $(addprefix $(SRC_DIR)/, main.cpp hash_table.hpp)
+	$(COMPILER) $(FLAGS) -c $< -o $@
+
+
+# Предварительная сборка hash_table.cpp
+$(BIN_DIR)/hash_table.o: $(addprefix $(SRC_DIR)/, hash_table.cpp hash_table.hpp)
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
 
