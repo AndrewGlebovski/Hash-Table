@@ -18,10 +18,10 @@ typedef const char *data_t;
 typedef const char *okey_t;
 
 /// Hash function type for table
-typedef hash_t (*hash_func_t)(okey_t *ptr);             ///< Hash function type for table
-typedef int (*cmp_keys_t)(okey_t a, okey_t b);
-typedef void (*print_key_t)(FILE *stream, okey_t key);
-typedef void (*print_data_t)(FILE *stream, data_t data);
+typedef hash_t (*hash_func_t)(okey_t *ptr);                 ///< Hash function type for table
+typedef int (*cmp_keys_t)(okey_t a, okey_t b);              ///< Compare keys functions
+typedef void (*print_key_t)(FILE *stream, okey_t key);      ///< Prints key
+typedef void (*print_data_t)(FILE *stream, data_t data);    ///< Prints data
 
 
 /// Node structure for linked list
@@ -41,17 +41,6 @@ typedef struct {
     size_t buffer_size = 0;             ///< Size of the buffer holding lists first nodes
     Node *buffer = nullptr;             ///< Buffer holding lists first nodes
 } HashTable;
-
-
-/// Possible exit codes for hash table functions
-typedef enum {
-    OK          = 0,                    ///< OK
-    INVALID_ARG = 1,                    ///< Invalid argument passed to function
-    ALLOC_FAIL  = 2,                    ///< Calloc failed to allocate memory
-    BUF_ERROR   = 3,                    ///< Table has null buffer
-    BUF_SIZE    = 4,                    ///< Table has invalid buffer size
-    POISON_ERR  = 5,                    ///< Unexpected poison value
-} ExitCodes;
 
 
 /**

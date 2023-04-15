@@ -20,12 +20,12 @@ run.exe: $(addprefix $(BIN_DIR)/, main.o hash_table.o)
 
 
 # Предварительная сборка main.cpp
-$(BIN_DIR)/main.o: $(addprefix $(SRC_DIR)/, main.cpp hash_table.hpp hash_func.hpp)
+$(BIN_DIR)/main.o: $(addprefix $(SRC_DIR)/, main.cpp hash_table.hpp hash_func.hpp assert.hpp)
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
 
 # Предварительная сборка hash_table.cpp
-$(BIN_DIR)/hash_table.o: $(addprefix $(SRC_DIR)/, hash_table.cpp hash_table.hpp)
+$(BIN_DIR)/hash_table.o: $(addprefix $(SRC_DIR)/, hash_table.cpp hash_table.hpp assert.hpp)
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
 

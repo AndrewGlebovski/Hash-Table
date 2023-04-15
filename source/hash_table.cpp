@@ -1,17 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#include "assert.hpp"
 #include "hash_table.hpp"
 
 
-/// Checks for condition; if failed prints __VA_ARGS__ and returns with the given exit code
-#define ASSERT(condition, exitcode, ...)            \
-do {                                                \
-    if (!(condition)) {                             \
-        printf(__VA_ARGS__);                        \
-        return exitcode;                            \
-    }                                               \
-} while (0)
 
 
 /**
