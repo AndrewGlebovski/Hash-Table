@@ -69,7 +69,13 @@ int hash_table_insert(HashTable *table, okey_t new_key, data_t new_data) {
         node -> next = nullptr;
     }
     else {
-        while (node -> next) node = node -> next;
+        while (node -> next) {
+            if (!(table -> cmp_keys)(new_key, node -> key)) return OK; // Key already exists
+
+            node = node -> next;
+        }
+
+        if (!(table -> cmp_keys)(new_key, node -> key)) return OK; // Key already exists
 
         node -> next = create_node(new_key, new_data);
         ASSERT(node -> next, ALLOC_FAIL, "Failed to alloc new node!\n");
@@ -226,4 +232,11 @@ void free_list(Node *node) {
         free_list(node -> next);
         free(node);
     }
+}
+
+
+size_t get_list_len(Node *node) {
+    size_t count = 0;
+    for (; node; node = node -> next, count++);
+    return count;
 }

@@ -16,10 +16,16 @@ do {                                                \
 
 /// Possible exit codes
 typedef enum {
-    OK          = 0,                    ///< OK
-    INVALID_ARG = 1,                    ///< Invalid argument passed to function
-    ALLOC_FAIL  = 2,                    ///< Calloc failed to allocate memory
-    BUF_ERROR   = 3,                    ///< Table has null buffer
-    BUF_SIZE    = 4,                    ///< Table has invalid buffer size
-    POISON_ERR  = 5,                    ///< Unexpected poison value
+    OK,                 ///< OK
+    INVALID_ARG,        ///< Invalid argument passed to function
+    ALLOC_FAIL,         ///< Calloc failed to allocate memory
+    BUF_ERROR,          ///< Table has null buffer
+    BUF_SIZE,           ///< Table has invalid buffer size
+    POISON_ERR,         ///< Unexpected poison value
+    INFO_NULLPTR,       ///< File info has null ptr
+    INFO_SIZE,          ///< File info has invalid file size
+    FILE_NOT_FOUND,     ///< File doesn't exist
+    FILE_MMAP_ERR,      ///< Failed to mmap file
+    FILE_UNMAP_ERR,     ///< Failed to unmap file
+    FILE_STAT_ERR,      ///< Failed to get file stat
 } ExitCodes;

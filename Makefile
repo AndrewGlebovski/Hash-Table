@@ -15,7 +15,7 @@ all: $(BIN_DIR) run.exe
 
 
 # Завершает сборку
-run.exe: $(addprefix $(BIN_DIR)/, main.o hash_table.o) 
+run.exe: $(addprefix $(BIN_DIR)/, main.o hash_table.o text_parser.o) 
 	$(COMPILER) $^ -o $@
 
 
@@ -26,6 +26,11 @@ $(BIN_DIR)/main.o: $(addprefix $(SRC_DIR)/, main.cpp hash_table.hpp hash_func.hp
 
 # Предварительная сборка hash_table.cpp
 $(BIN_DIR)/hash_table.o: $(addprefix $(SRC_DIR)/, hash_table.cpp hash_table.hpp assert.hpp)
+	$(COMPILER) $(FLAGS) -c $< -o $@
+
+
+# Предварительная сборка text_parser.cpp
+$(BIN_DIR)/text_parser.o: $(addprefix $(SRC_DIR)/, text_parser.cpp text_parser.hpp hash_table.hpp assert.hpp)
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
 

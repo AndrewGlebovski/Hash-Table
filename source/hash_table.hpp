@@ -114,3 +114,11 @@ int hash_table_dump(HashTable *table, FILE *stream);
  * \return Non zero value means error
 */
 int hash_table_destructor(HashTable *table);
+
+
+/**
+ * \brief Counts list length starting from node
+ * \param [in] node Node to start count from
+ * \return List size (0 if node is null)
+*/
+size_t get_list_len(Node *node);
