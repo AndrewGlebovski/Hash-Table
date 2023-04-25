@@ -22,6 +22,7 @@ typedef enum {
     BUF_ERROR,          ///< Table has null buffer
     BUF_SIZE,           ///< Table has invalid buffer size
     POISON_ERR,         ///< Unexpected poison value
+    KEY_NOT_FOUND,      ///< Key wasn't found in hash table
     INFO_NULLPTR,       ///< File info has null ptr
     INFO_SIZE,          ///< File info has invalid file size
     FILE_NOT_FOUND,     ///< File doesn't exist

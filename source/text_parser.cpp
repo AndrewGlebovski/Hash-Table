@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -57,7 +58,7 @@ int get_words(FileInfo *info, HashTable *table) {
             (info -> ptr)[i] = '\0';
 
             if (table && str_len) 
-                hash_table_insert(table, str_begin, str_begin);
+                hash_table_insert(table, str_begin, rand());
 
             str_begin = info -> ptr + i + 1;
             str_len = 0;

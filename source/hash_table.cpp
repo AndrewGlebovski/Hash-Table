@@ -1,10 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #include "assert.hpp"
 #include "hash_table.hpp"
 
 
+#define VERIFICATE(table_ptr)                                                                   \
+do {                                                                                            \
+    int error = hash_table_verifier(table_ptr);                                                 \
+    if (error) {                                                                                \
+        printf("[Verification failed] %s (%i) %s\n", __FILE__, __LINE__, __PRETTY_FUNCTION__);  \
+        return error;                                                                           \
+    }                                                                                           \
+} while(0)
 
 
 /**
@@ -17,11 +25,19 @@ Node *create_node(okey_t key, data_t data);
 
 
 /**
+ * \brief Free node
+ * \param [out] node This node will be free
+ * \note Node's data will not be free
+*/
+void free_node(Node *node);
+
+
+/**
  * \brief Returns pointer to list first node corresponding key hash
  * \param [in] key Key to get hash from
  * \return Pointer to list first node
 */
-Node *get_list(HashTable *table, okey_t key);
+inline Node *get_list(HashTable *table, okey_t key);
 
 
 /**
@@ -31,129 +47,113 @@ Node *get_list(HashTable *table, okey_t key);
 void free_list(Node *node);
 
 
+/**
+ * \brief Calculates bucket index of the key
+ * \param [in] table    Hash table to take hash function from
+ * \param [in] key      Key value to calculate hash
+ * \return Bucket index correspoding to the key
+*/
+inline hash_t get_hash(HashTable *table, okey_t key);
 
 
-int hash_table_constructor(HashTable *table, size_t buffer_size,
-    hash_func_t hash_func,
-    cmp_keys_t cmp_keys,
-    print_key_t print_key, 
-    print_data_t print_data
-) {
+/**
+ * \brief Finds node in list by key and optionally sets previous one
+ * \param [in]  begin   List begin 
+ * \param [in]  key     Key to search for
+ * \param [out] prev    If not NULL will be filled with address of the previous node
+ * \return NULL if nothing found and pointer to the node otherwise
+*/
+Node *find_node(Node *begin, okey_t key, Node **prev);
+
+
+
+
+int hash_table_constructor(HashTable *table, size_t size, hash_func_t hash_func) {
     ASSERT(table, INVALID_ARG, "Can't construct nullptr!\n");
-    ASSERT(buffer_size, INVALID_ARG, "Buffer size can't be zero!\n");
+    ASSERT(size, INVALID_ARG, "Buckets size can't be zero!\n");
     ASSERT(hash_func, INVALID_ARG, "Hash function can't be nullptr!\n");
 
     table -> hash_func = hash_func;
-    table -> cmp_keys = cmp_keys;
-    table -> print_key = print_key;
-    table -> print_data = print_data;
 
-    table -> buffer = (Node *) calloc(buffer_size, sizeof(Node));
-    ASSERT(table -> buffer, ALLOC_FAIL, "Can't allocate buffer for table!\n");
+    table -> buckets = (Node **) calloc(size, sizeof(Node *));
+    ASSERT(table -> buckets, ALLOC_FAIL, "Can't allocate buckets for table!\n");
     
-    table -> buffer_size = buffer_size;
+    table -> size = size;
 
     return OK;
 }
 
 
 int hash_table_insert(HashTable *table, okey_t new_key, data_t new_data) {
-    ASSERT(table, INVALID_ARG, "Can't insert in nullptr!\n");
-    ASSERT(table -> buffer, BUF_ERROR, "Can't insert in table with null buffer!\n");
+    VERIFICATE(table);
 
-    Node *node = get_list(table, new_key);
+    hash_t hash = get_hash(table, new_key);
 
-    if (node -> key == POISON_KEY && node -> data == POISON_DATA) {
-        node -> key = new_key;
-        node -> data = new_data;
-        node -> next = nullptr;
+    if (!table -> buckets[hash]) {
+        table -> buckets[hash] = create_node(new_key, new_data);
+        ASSERT(table -> buckets[hash], ALLOC_FAIL, "Failed to alloc new node!\n");
     }
     else {
-        while (node -> next) {
-            if (!(table -> cmp_keys)(new_key, node -> key)) return OK; // Key already exists
+        Node *node = find_node(table -> buckets[hash], new_key, nullptr);
 
-            node = node -> next;
+        if (node) {
+            node -> data = new_data;
+            return OK;
         }
+        else {
+            node = table -> buckets[hash];
 
-        if (!(table -> cmp_keys)(new_key, node -> key)) return OK; // Key already exists
+            table -> buckets[hash] = create_node(new_key, new_data);
+            ASSERT(table -> buckets[hash], ALLOC_FAIL, "Failed to alloc new node!\n");
 
-        node -> next = create_node(new_key, new_data);
-        ASSERT(node -> next, ALLOC_FAIL, "Failed to alloc new node!\n");
+            table -> buckets[hash] -> next = node;
+        }
     }
 
-    return OK;
+    return hash_table_verifier(table);
 }
 
 
 int hash_table_find(HashTable *table, okey_t key, data_t *data) {
-    ASSERT(table, INVALID_ARG, "Can't insert in nullptr!\n");
-    ASSERT(data, INVALID_ARG, "Can't store result in nullptr!\n");
-    ASSERT(table -> buffer, BUF_ERROR, "Can't insert in table with null buffer!\n");
+    VERIFICATE(table);
 
-    Node *node = get_list(table, key);
+    Node *node = find_node(get_list(table, key), key, nullptr);
 
-    while (node) {
-        if (!table -> cmp_keys(key, node -> key)) {
-            *data = node -> data;
-            return OK;
-        }
-
-        node = node -> next;
+    if (node) {
+        *data = node -> data;
+        return OK;
     }
-
-    *data = POISON_DATA;
-    return OK;
+    
+    *data = 0;
+    return KEY_NOT_FOUND;
 }
 
 
-int hash_table_remove(HashTable *table, okey_t key, data_t *data) {
-    ASSERT(table, INVALID_ARG, "Can't insert in nullptr!\n");
-    ASSERT(table -> buffer, BUF_ERROR, "Can't insert in table with null buffer!\n");
+int hash_table_remove(HashTable *table, okey_t key) {
+    VERIFICATE(table);
 
-    Node *node = get_list(table, key), *prev = nullptr;
+    Node *node = nullptr, *prev = nullptr;
+    node = find_node(get_list(table, key), key, &prev);
 
-    while (node) {
-        if (!table -> cmp_keys(key, node -> key)) {
-            if (data) *data = node -> data;
+    if (node) {
+        if (prev) prev -> next = node -> next;
+        else table -> buckets[get_hash(table, key)] = nullptr;
 
-            if (prev) {
-                prev -> next = node -> next;
-                free(node);
-            }
-            else {
-                if (node -> next) {
-                    Node *next = node -> next;
-                    memcpy(node, node -> next, sizeof(Node));
-                    free(next);
-                }
-                else {
-                    node -> key = POISON_KEY;
-                    node -> data = POISON_DATA;
-                    node -> next = nullptr;
-                }
-            }
-
-            return OK;
-        }
-
-        prev = node;
-        node = node -> next;
+        free_node(node);
     }
 
-    if (data) *data = POISON_DATA;
-
-    return OK;
+    return hash_table_verifier(table);
 }
 
 
 int hash_table_verifier(HashTable *table) {
     ASSERT(table, INVALID_ARG, "[Verifier] Table is nullptr!\n");
-    ASSERT(table -> buffer, BUF_ERROR, "[Verifier] Table buffer is nullptr!\n");
-    ASSERT(table -> buffer_size, BUF_SIZE, "[Verifier] Table buffer size is zero!\n");
+    ASSERT(table -> buckets, BUF_ERROR, "[Verifier] Table buckets is nullptr!\n");
+    ASSERT(table -> size, BUF_SIZE, "[Verifier] Table buckets size is zero!\n");
 
-    for (size_t i = 0; i < table -> buffer_size; i++) {
-        for (Node *node = table -> buffer + i; node; node = node -> next) {
-            if (!(table -> cmp_keys)(POISON_KEY, node -> key) && node -> next) return POISON_ERR;
+    for (size_t i = 0; i < table -> size; i++) {
+        for (Node *node = table -> buckets[i]; node; node = node -> next) {
+            if (node -> key == nullptr) return POISON_ERR;
         }
     }
 
@@ -162,21 +162,18 @@ int hash_table_verifier(HashTable *table) {
 
 
 int hash_table_dump(HashTable *table, FILE *stream) {
-    ASSERT(!hash_table_verifier(table), INVALID_ARG, "Can't dump due to verification error!\n");
+    VERIFICATE(table);
 
     fprintf(stream, "Hash Table [%p]\n", table);
-    fprintf(stream, "Buffer size: %lu\n", table -> buffer_size);
+    fprintf(stream, "Buffer size: %lu\n", table -> size);
     fprintf(stream, "Buffer:\n");
 
-    for (size_t i = 0; i < table -> buffer_size; i++) {
+    for (size_t i = 0; i < table -> size; i++) {
         fprintf(stream, "  %5lu: ", i);
 
-        for (Node *node = table -> buffer + i; node; node = node -> next) {
-            fprintf(stream, "(");
-            (table -> print_key)(stream, node -> key);
-            fprintf(stream, ", ");
-            (table -> print_data)(stream, node -> data);
-            fprintf(stream, ")");
+        // PRINT IS NOT SAFE FOR NULLPTR!!!
+        for (Node *node = table -> buckets[i]; node; node = node -> next) {
+            fprintf(stream, "(%s, %i)", node -> key, node -> data);
 
             if (node -> next) fprintf(stream, " -> ");
         }
@@ -190,19 +187,16 @@ int hash_table_dump(HashTable *table, FILE *stream) {
 
 
 int hash_table_destructor(HashTable *table) {
-    ASSERT(!hash_table_verifier(table), INVALID_ARG, "Can't destroy due to verification error!\n");
+    VERIFICATE(table);
 
-    for (size_t i = 0; i < table -> buffer_size; i++) free_list((table -> buffer + i) -> next);
+    for (size_t i = 0; i < table -> size; i++) free_list(table -> buckets[i]);
 
-    free(table -> buffer);
-    table -> buffer = nullptr;
+    free(table -> buckets);
+    table -> buckets = nullptr;
 
-    table -> buffer_size = 0;
+    table -> size = 0;
 
     table -> hash_func = nullptr;
-    table -> cmp_keys = nullptr;
-    table -> print_key = nullptr;
-    table -> print_data = nullptr;
 
     return OK;
 }
@@ -221,16 +215,27 @@ Node *create_node(okey_t key, data_t data) {
 }
 
 
-Node *get_list(HashTable *table, okey_t key) {
-    hash_t hash = table -> hash_func(&key) % (hash_t) table -> buffer_size;
-    return table -> buffer + hash;
+void free_node(Node *node) {
+    if (!node) return;
+
+    free(node);
+}
+
+
+inline hash_t get_hash(HashTable *table, okey_t key) {
+    return table -> hash_func(&key) % (hash_t) table -> size;
+}
+
+
+inline Node *get_list(HashTable *table, okey_t key) {
+    return table -> buckets[get_hash(table, key)];
 }
 
 
 void free_list(Node *node) {
     if (node) {
         free_list(node -> next);
-        free(node);
+        free_node(node);
     }
 }
 
@@ -239,4 +244,18 @@ size_t get_list_len(Node *node) {
     size_t count = 0;
     for (; node; node = node -> next, count++);
     return count;
+}
+
+
+Node *find_node(Node *begin, okey_t key, Node **prev) {
+    if (prev) *prev = nullptr;
+
+    if (!begin) return nullptr;
+    
+    // STRCMP IS NOT SAFE FOR NULLPTR!!!
+    for (; begin && strcmp(begin -> key, key); begin = begin -> next) {
+        if (prev) *prev = begin;
+    }
+
+    return begin;
 }

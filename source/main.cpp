@@ -17,13 +17,6 @@ typedef struct {
 const size_t TABLE_BUFFER_SIZE = 17u;
 
 
-int cmp_keys(okey_t a, okey_t b);
-
-void print_key(FILE *stream, okey_t key);
-
-void print_data(FILE *stream, data_t data);
-
-
 
 
 int main(int argc, char *argv[]) {
@@ -57,14 +50,14 @@ int main(int argc, char *argv[]) {
     HashTable table = {};
 
     for (size_t func = 0; func < sizeof(func_list) / sizeof(HashFuncInfo); func++) {
-        hash_table_constructor(&table, TABLE_BUFFER_SIZE, func_list[func].func, &cmp_keys, &print_key, &print_data);
+        hash_table_constructor(&table, TABLE_BUFFER_SIZE, func_list[func].func);
 
         get_words(&info, &table);
 
         fprintf(csv_file, "%s", func_list[func].name);
 
-        for (size_t i = 0; i < table.buffer_size; i++)
-            fprintf(csv_file, ", %lu", get_list_len(table.buffer + i));
+        for (size_t i = 0; i < table.size; i++)
+            fprintf(csv_file, ", %lu", get_list_len(table.buckets[i]));
 
         fputc('\n', csv_file);
 
@@ -78,24 +71,4 @@ int main(int argc, char *argv[]) {
     printf("Hash Table!\n");
 
     return 0;
-}
-
-
-
-
-int cmp_keys(okey_t a, okey_t b) {
-    if (!a && !b) return 0;
-    if (!a) return -1;
-    if (!b) return 1;
-    return strcmp(a, b);
-}
-
-
-void print_key(FILE *stream, okey_t key) {
-    fprintf(stream, "%s", (key) ? key : "[POISON]");
-}
-
-
-void print_data(FILE *stream, data_t data) {
-    fprintf(stream, "%s", (data) ? data : "[POISON]");
 }
