@@ -5,14 +5,25 @@
 #include "hash_table.hpp"
 
 
-#define VERIFICATE(table_ptr)                                                                   \
-do {                                                                                            \
-    int error = hash_table_verifier(table_ptr);                                                 \
-    if (error) {                                                                                \
-        printf("[Verification failed] %s (%i) %s\n", __FILE__, __LINE__, __PRETTY_FUNCTION__);  \
-        return error;                                                                           \
-    }                                                                                           \
-} while(0)
+#define VERIFY
+
+
+#ifdef VERIFY
+
+    #define VERIFICATE(table_ptr)                                                                   \
+    do {                                                                                            \
+        int error = hashtable_verifier(table_ptr);                                                  \
+        if (error) {                                                                                \
+            printf("[Verification failed] %s (%i) %s\n", __FILE__, __LINE__, __PRETTY_FUNCTION__);  \
+            return error;                                                                           \
+        }                                                                                           \
+    } while(0)
+
+#else
+
+    #define VERIFICATE(table_ptr)
+
+#endif
 
 
 /**
@@ -68,7 +79,7 @@ Node *find_node(Node *begin, okey_t key, Node **prev);
 
 
 
-int hash_table_constructor(HashTable *table, size_t size, hash_func_t hash_func) {
+int hashtable_constructor(HashTable *table, size_t size, hash_func_t hash_func) {
     ASSERT(table, INVALID_ARG, "Can't construct nullptr!\n");
     ASSERT(size, INVALID_ARG, "Buckets size can't be zero!\n");
     ASSERT(hash_func, INVALID_ARG, "Hash function can't be nullptr!\n");
@@ -84,8 +95,9 @@ int hash_table_constructor(HashTable *table, size_t size, hash_func_t hash_func)
 }
 
 
-int hash_table_insert(HashTable *table, okey_t new_key, data_t new_data) {
+int hashtable_insert(HashTable *table, okey_t new_key, data_t new_data) {
     VERIFICATE(table);
+    ASSERT(new_key, INVALID_ARG, "Key is nullptr!\n");
 
     hash_t hash = get_hash(table, new_key);
 
@@ -110,11 +122,12 @@ int hash_table_insert(HashTable *table, okey_t new_key, data_t new_data) {
         }
     }
 
-    return hash_table_verifier(table);
+    VERIFICATE(table);
+    return OK;
 }
 
 
-int hash_table_find(HashTable *table, okey_t key, data_t *data) {
+int hashtable_find(HashTable *table, okey_t key, data_t *data) {
     VERIFICATE(table);
 
     Node *node = find_node(get_list(table, key), key, nullptr);
@@ -129,7 +142,7 @@ int hash_table_find(HashTable *table, okey_t key, data_t *data) {
 }
 
 
-int hash_table_remove(HashTable *table, okey_t key) {
+int hashtable_remove(HashTable *table, okey_t key) {
     VERIFICATE(table);
 
     Node *node = nullptr, *prev = nullptr;
@@ -142,11 +155,12 @@ int hash_table_remove(HashTable *table, okey_t key) {
         free_node(node);
     }
 
-    return hash_table_verifier(table);
+    VERIFICATE(table);
+    return OK;
 }
 
 
-int hash_table_verifier(HashTable *table) {
+int hashtable_verifier(HashTable *table) {
     ASSERT(table, INVALID_ARG, "[Verifier] Table is nullptr!\n");
     ASSERT(table -> buckets, BUF_ERROR, "[Verifier] Table buckets is nullptr!\n");
     ASSERT(table -> size, BUF_SIZE, "[Verifier] Table buckets size is zero!\n");
@@ -161,7 +175,7 @@ int hash_table_verifier(HashTable *table) {
 }
 
 
-int hash_table_dump(HashTable *table, FILE *stream) {
+int hashtable_dump(HashTable *table, FILE *stream) {
     VERIFICATE(table);
 
     fprintf(stream, "Hash Table [%p]\n", table);
@@ -186,7 +200,7 @@ int hash_table_dump(HashTable *table, FILE *stream) {
 }
 
 
-int hash_table_destructor(HashTable *table) {
+int hashtable_destructor(HashTable *table) {
     VERIFICATE(table);
 
     for (size_t i = 0; i < table -> size; i++) free_list(table -> buckets[i]);

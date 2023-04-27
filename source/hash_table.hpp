@@ -43,7 +43,7 @@ typedef struct {
  * \param [in]  print_data      Function to print data
  * \return Non zero value means error
 */
-int hash_table_constructor(HashTable *table, size_t size,  hash_func_t hash_func);
+int hashtable_constructor(HashTable *table, size_t size,  hash_func_t hash_func);
 
 
 /**
@@ -53,7 +53,7 @@ int hash_table_constructor(HashTable *table, size_t size,  hash_func_t hash_func
  * \param [in]  new_data    Data to insert
  * \return Non zero value means error
 */
-int hash_table_insert(HashTable *table, okey_t new_key, data_t new_data);
+int hashtable_insert(HashTable *table, okey_t new_key, data_t new_data);
 
 
 /**
@@ -63,7 +63,7 @@ int hash_table_insert(HashTable *table, okey_t new_key, data_t new_data);
  * \param [out] data        Data will be copied to this address
  * \return Non zero value means error
 */
-int hash_table_find(HashTable *table, okey_t key, data_t *data);
+int hashtable_find(HashTable *table, okey_t key, data_t *data);
 
 
 /**
@@ -72,7 +72,7 @@ int hash_table_find(HashTable *table, okey_t key, data_t *data);
  * \param [in]  key         Key to remove
  * \return Non zero value means error
 */
-int hash_table_remove(HashTable *table, okey_t key);
+int hashtable_remove(HashTable *table, okey_t key);
 
 
 /**
@@ -80,7 +80,7 @@ int hash_table_remove(HashTable *table, okey_t key);
  * \param [in]  table       Hash table pointer
  * \return Non zero value means error
 */
-int hash_table_verifier(HashTable *table);
+int hashtable_verifier(HashTable *table);
 
 
 /**
@@ -89,7 +89,7 @@ int hash_table_verifier(HashTable *table);
  * \param [out] stream      Stream for output
  * \return Non zero value means error
 */
-int hash_table_dump(HashTable *table, FILE *stream);
+int hashtable_dump(HashTable *table, FILE *stream);
 
 
 /**
@@ -97,7 +97,7 @@ int hash_table_dump(HashTable *table, FILE *stream);
  * \param [out] table       Hash table pointer
  * \return Non zero value means error
 */
-int hash_table_destructor(HashTable *table);
+int hashtable_destructor(HashTable *table);
 
 
 /**
