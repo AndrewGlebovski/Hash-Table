@@ -5,7 +5,7 @@
 #include "hash_table.hpp"
 
 
-#define VERIFY
+// #define VERIFY
 
 
 #ifdef VERIFY
@@ -261,7 +261,7 @@ size_t get_list_len(Node *node) {
 }
 
 
-Node *find_node(Node *begin, okey_t key, Node **prev) {
+__attribute__ ((noinline)) Node *find_node(Node *begin, okey_t key, Node **prev) {
     if (prev) *prev = nullptr;
 
     if (!begin) return nullptr;

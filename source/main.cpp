@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 
     data_t data = 0;
 
-    for (size_t i = 0; i < 1000000; i++) {
+    for (size_t i = 0; i < 10000; i++) {
         hashtable_find(&table, "abnormal", &data);
     }
 
