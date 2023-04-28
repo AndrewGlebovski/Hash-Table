@@ -1,11 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <immintrin.h>
 #include "assert.hpp"
 #include "hash_table.hpp"
 
 
+/// Alignment required for char string
+const size_t STR_ALIGN = 32;
+
+
 // #define VERIFY
+#define ALIGN_PROTECT
 
 
 #ifdef VERIFY
@@ -26,6 +32,23 @@
 #endif
 
 
+#ifdef ALIGN_PROTECT
+
+    #define CHECK_ALIGN(ptr)                                                                            \
+    do {                                                                                                \
+        if (!ptr || ((unsigned long long) ptr & (STR_ALIGN - 1))) {                                     \
+            printf("[Alignment failed %p] %s (%i) %s\n", ptr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+            return ALIGN_FAIL;                                                                          \
+        }                                                                                               \
+    } while(0)
+
+#else
+
+    #define CHECK_ALIGN(ptr)
+
+#endif
+
+
 /**
  * \brief Allocates new node
  * \param [in] key  New node key
@@ -38,6 +61,7 @@ Node *create_node(okey_t key, data_t data);
 /**
  * \brief Free node
  * \param [out] node This node will be free
+ * \warning Doesn't free node's data
  * \note Node's data will not be free
 */
 void free_node(Node *node);
@@ -77,6 +101,16 @@ inline hash_t get_hash(HashTable *table, okey_t key);
 Node *find_node(Node *begin, okey_t key, Node **prev);
 
 
+/**
+ * \brief Compares string aligned on 32-bytes using SIMD if ALIGN_PROTECT defined otherwise uses strcmp
+ * \param [in] str1 First string to compare
+ * \param [in] str2 Second string to compare
+ * \warning No protection from nullptr strings
+ * \return 1 - strings are equal, 0 - otherwise
+*/
+int is_equal(const char *str1, const char *str2);
+
+
 
 
 int hashtable_constructor(HashTable *table, size_t size, hash_func_t hash_func) {
@@ -98,6 +132,7 @@ int hashtable_constructor(HashTable *table, size_t size, hash_func_t hash_func) 
 int hashtable_insert(HashTable *table, okey_t new_key, data_t new_data) {
     VERIFICATE(table);
     ASSERT(new_key, INVALID_ARG, "Key is nullptr!\n");
+    CHECK_ALIGN(new_key);
 
     hash_t hash = get_hash(table, new_key);
 
@@ -129,6 +164,8 @@ int hashtable_insert(HashTable *table, okey_t new_key, data_t new_data) {
 
 int hashtable_find(HashTable *table, okey_t key, data_t *data) {
     VERIFICATE(table);
+    ASSERT(key, INVALID_ARG, "Key is nullptr!\n");
+    CHECK_ALIGN(key);
 
     Node *node = find_node(get_list(table, key), key, nullptr);
 
@@ -144,6 +181,8 @@ int hashtable_find(HashTable *table, okey_t key, data_t *data) {
 
 int hashtable_remove(HashTable *table, okey_t key) {
     VERIFICATE(table);
+    ASSERT(key, INVALID_ARG, "Key is nullptr!\n");
+    CHECK_ALIGN(key);
 
     Node *node = nullptr, *prev = nullptr;
     node = find_node(get_list(table, key), key, &prev);
@@ -168,6 +207,7 @@ int hashtable_verifier(HashTable *table) {
     for (size_t i = 0; i < table -> size; i++) {
         for (Node *node = table -> buckets[i]; node; node = node -> next) {
             if (node -> key == nullptr) return POISON_ERR;
+            CHECK_ALIGN(node -> key);
         }
     }
 
@@ -185,7 +225,6 @@ int hashtable_dump(HashTable *table, FILE *stream) {
     for (size_t i = 0; i < table -> size; i++) {
         fprintf(stream, "  %5lu: ", i);
 
-        // PRINT IS NOT SAFE FOR NULLPTR!!!
         for (Node *node = table -> buckets[i]; node; node = node -> next) {
             fprintf(stream, "(%s, %i)", node -> key, node -> data);
 
@@ -265,11 +304,38 @@ __attribute__ ((noinline)) Node *find_node(Node *begin, okey_t key, Node **prev)
     if (prev) *prev = nullptr;
 
     if (!begin) return nullptr;
-    
-    // STRCMP IS NOT SAFE FOR NULLPTR!!!
-    for (; begin && strcmp(begin -> key, key); begin = begin -> next) {
+
+    for (; begin && is_equal(begin -> key, key); begin = begin -> next) {
         if (prev) *prev = begin;
     }
 
     return begin;
 }
+
+
+#ifdef ALIGN_PROTECT
+
+    __attribute__ ((noinline)) int is_equal(const char *str1, const char *str2) {
+        while (1) {
+            __m256i a = _mm256_load_si256((const __m256i *) str1);
+            __m256i b = _mm256_load_si256((const __m256i *) str2);
+            
+            __m256i res = _mm256_sub_epi8(a, b);
+
+            if (!_mm256_testz_si256(res, _mm256_set1_epi32(0xFFFFFFFF))) return 0;
+
+            if (str1[STR_ALIGN - 1] == 0 && str2[STR_ALIGN - 1] == 0) break;
+            
+            str1 += STR_ALIGN, str2 += STR_ALIGN;
+        };
+
+        return 1;
+    }
+
+#else
+
+    __attribute__ ((noinline)) int is_equal(const char *str1, const char *str2) {
+        return 1 - strcmp(str1, str2);
+    }
+
+#endif

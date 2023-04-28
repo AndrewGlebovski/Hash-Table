@@ -30,4 +30,5 @@ typedef enum {
     FILE_UNMAP_ERR,     ///< Failed to unmap file
     FILE_STAT_ERR,      ///< Failed to get file stat
     WRITE_FAIL,         ///< Failed to write into file
+    ALIGN_FAIL,         ///< Pointer was not aligned properly
 } ExitCodes;
