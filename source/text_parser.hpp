@@ -29,9 +29,18 @@ int unmap_file(FileInfo *info);
 
 
 /**
- * \brief Split text in memory into words by replacing each not alnum() symbol with '\0'
- * \param [out] info    Pointer to text and it's size
- * \param [out] table   Table to insert word into (only if table ptr is not null)
+ * \brief Converts input file with words into specific binary with each word aligned
+ * \param [in] input    Input file to take words from
+ * \param [in] output   Output file to write words into
  * \return Non zero value means error
 */
-int get_words(FileInfo *info, HashTable *table);
+int convert(const char *input, const char *output);
+
+
+/**
+ * \brief Fill hash table with aligned words from specific binary
+ * \param [out] info    Pointer to specific binary and it's size
+ * \param [out] table   Table to insert word into
+ * \return Non zero value means error
+*/
+int insert_words(FileInfo *info, HashTable *table);

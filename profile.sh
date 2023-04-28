@@ -5,10 +5,10 @@
 
 
 # Path to executable file
-exe_path="./run.exe"
+exe_path="./table.exe"
 
 # Executable arguments
-exe_args="words.txt"
+exe_args="words.out"
 
 # Path to callgrind output file
 callgrind_out="profile.out"

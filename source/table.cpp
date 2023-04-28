@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
 #include "hash_table.hpp"
 #include "text_parser.hpp"
 
@@ -21,6 +22,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    srand((unsigned int) time(NULL));
+
     FileInfo info = {};
     mmap_file(argv[1], &info);
 
@@ -28,13 +31,11 @@ int main(int argc, char *argv[]) {
 
     hashtable_constructor(&table, TABLE_BUFFER_SIZE, gnu_hash);
 
-    get_words(&info, &table);
-
+    insert_words(&info, &table);
+    
     data_t data = 0;
-
-    for (size_t i = 0; i < 10000; i++) {
-        hashtable_find(&table, "abnormal", &data);
-    }
+    for (size_t i = 0; i < 1000000; i++)
+        hashtable_find(&table, info.ptr + ((size_t) rand() % 58000) * 32, &data);
 
     hashtable_destructor(&table);
 

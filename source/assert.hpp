@@ -29,4 +29,5 @@ typedef enum {
     FILE_MMAP_ERR,      ///< Failed to mmap file
     FILE_UNMAP_ERR,     ///< Failed to unmap file
     FILE_STAT_ERR,      ///< Failed to get file stat
+    WRITE_FAIL,         ///< Failed to write into file
 } ExitCodes;

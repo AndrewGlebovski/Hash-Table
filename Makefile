@@ -2,7 +2,7 @@
 COMPILER=g++
 
 # Флаги компиляции
-FLAGS=-no-pie -Wno-unused-parameter -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equal -Winline -Wunreachable-code -Wmissing-declarations -Wmissing-include-dirs -Wswitch-enum -Wswitch-default -Weffc++ -Wmain -Wextra -Wall -g -pipe -fexceptions -Wcast-qual -Wconversion -Wctor-dtor-privacy -Wempty-body -Wformat-security -Wformat=2 -Wignored-qualifiers -Wlogical-op -Wmissing-field-initializers -Wnon-virtual-dtor -Woverloaded-virtual -Wpointer-arith -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing -Wstrict-null-sentinel -Wtype-limits -Wwrite-strings -D_DEBUG -D_EJUDGE_CLIENT_
+FLAGS=-O1 -no-pie -Wno-unused-parameter -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equal -Winline -Wunreachable-code -Wmissing-declarations -Wmissing-include-dirs -Wswitch-enum -Wswitch-default -Weffc++ -Wmain -Wextra -Wall -g -pipe -fexceptions -Wcast-qual -Wconversion -Wctor-dtor-privacy -Wempty-body -Wformat-security -Wformat=2 -Wignored-qualifiers -Wlogical-op -Wmissing-field-initializers -Wnon-virtual-dtor -Woverloaded-virtual -Wpointer-arith -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing -Wstrict-null-sentinel -Wtype-limits -Wwrite-strings -D_DEBUG -D_EJUDGE_CLIENT_
 
 # Папка с .o
 BIN_DIR=binary
@@ -11,16 +11,26 @@ BIN_DIR=binary
 SRC_DIR=source
 
 
-all: $(BIN_DIR) run.exe
+all: $(BIN_DIR) table.exe conv.exe
 
 
-# Завершает сборку
-run.exe: $(addprefix $(BIN_DIR)/, main.o hash_table.o text_parser.o) 
+# Завершает сборку table
+table.exe: $(addprefix $(BIN_DIR)/, table.o hash_table.o text_parser.o) 
 	$(COMPILER) $^ -o $@
 
 
-# Предварительная сборка main.cpp
-$(BIN_DIR)/main.o: $(addprefix $(SRC_DIR)/, main.cpp hash_table.hpp assert.hpp)
+# Завершает сборку converter
+conv.exe: $(addprefix $(BIN_DIR)/, converter.o hash_table.o text_parser.o) 
+	$(COMPILER) $^ -o $@
+
+
+# Предварительная сборка table.cpp
+$(BIN_DIR)/table.o: $(addprefix $(SRC_DIR)/, table.cpp text_parser.hpp hash_table.hpp assert.hpp)
+	$(COMPILER) $(FLAGS) -c $< -o $@
+
+
+# Предварительная сборка converter.cpp
+$(BIN_DIR)/converter.o: $(addprefix $(SRC_DIR)/, converter.cpp text_parser.hpp hash_table.hpp assert.hpp)
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
 
