@@ -207,7 +207,7 @@ int hashtable_remove(HashTable *table, okey_t key) {
 
     if (node) {
         if (prev) prev -> next = node -> next;
-        else table -> buckets[get_hash(table, key)] = nullptr;
+        else table -> buckets[get_hash(table, key)] = node -> next;
 
         free_node(node);
     }
