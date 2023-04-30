@@ -111,14 +111,31 @@ Node *find_node(Node *begin, okey_t key, Node **prev);
 int is_equal(const char *str1, const char *str2);
 
 
+#ifdef ALIGN_PROTECT
+
+/**
+ * \brief CRC32 hash function implementation using intrinsics
+ * \param [in] key String to calculate hash for
+ * \return Hash sum of the string
+*/
+hash_t crc32_hash(okey_t key);
+
+#endif
 
 
-int hashtable_constructor(HashTable *table, size_t size, hash_func_t hash_func) {
+/**
+ * \brief Classical GNU hash function implementation
+ * \param [in] key String to calculate hash for
+ * \return Hash sum of the string
+*/
+hash_t gnu_hash(okey_t key);
+
+
+
+
+int hashtable_constructor(HashTable *table, size_t size) {
     ASSERT(table, INVALID_ARG, "Can't construct nullptr!\n");
     ASSERT(size, INVALID_ARG, "Buckets size can't be zero!\n");
-    ASSERT(hash_func, INVALID_ARG, "Hash function can't be nullptr!\n");
-
-    table -> hash_func = hash_func;
 
     table -> buckets = (Node **) calloc(size, sizeof(Node *));
     ASSERT(table -> buckets, ALLOC_FAIL, "Can't allocate buckets for table!\n");
@@ -166,6 +183,7 @@ int hashtable_find(HashTable *table, okey_t key, data_t *data) {
     VERIFICATE(table);
     ASSERT(key, INVALID_ARG, "Key is nullptr!\n");
     CHECK_ALIGN(key);
+    ASSERT(data, INVALID_ARG, "Can't store value in null ptr!\n");
 
     Node *node = find_node(get_list(table, key), key, nullptr);
 
@@ -249,8 +267,6 @@ int hashtable_destructor(HashTable *table) {
 
     table -> size = 0;
 
-    table -> hash_func = nullptr;
-
     return OK;
 }
 
@@ -276,7 +292,7 @@ void free_node(Node *node) {
 
 
 inline hash_t get_hash(HashTable *table, okey_t key) {
-    return table -> hash_func(&key) % (hash_t) table -> size;
+    return crc32_hash(key) % (hash_t) table -> size;
 }
 
 
@@ -332,6 +348,17 @@ __attribute__ ((noinline)) Node *find_node(Node *begin, okey_t key, Node **prev)
         return 1;
     }
 
+
+    hash_t crc32_hash(okey_t key) {
+        hash_t sum = 0;
+
+        while (1) {
+            sum = _mm_crc32_u64(sum, *((const hash_t *) key));
+            if (!key[7]) return sum;
+            key += 8;
+        }
+    }
+
 #else
 
     __attribute__ ((noinline)) int is_equal(const char *str1, const char *str2) {
@@ -339,3 +366,13 @@ __attribute__ ((noinline)) Node *find_node(Node *begin, okey_t key, Node **prev)
     }
 
 #endif
+
+
+hash_t gnu_hash(okey_t key) {
+    hash_t sum = 5381;
+
+    for (; *key; key++)
+        sum = sum * 33 + *key;
+
+    return sum;
+}

@@ -27,7 +27,6 @@ typedef struct Node {
 
 /// Structure for holding hash table info
 typedef struct {
-    hash_func_t hash_func = nullptr;    ///< Pointer to hash function used by this table
     size_t size = 0;                    ///< Amount of buckets in hash table
     Node **buckets = nullptr;           ///< Buffer holding lists first nodes
 } HashTable;
@@ -43,7 +42,7 @@ typedef struct {
  * \param [in]  print_data      Function to print data
  * \return Non zero value means error
 */
-int hashtable_constructor(HashTable *table, size_t size,  hash_func_t hash_func);
+int hashtable_constructor(HashTable *table, size_t size);
 
 
 /**
