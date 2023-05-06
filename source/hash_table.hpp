@@ -28,6 +28,7 @@ typedef struct Node {
 /// Structure for holding hash table info
 typedef struct {
     size_t size = 0;                    ///< Amount of buckets in hash table
+    size_t count = 0;                   ///< Amount of elements in hashtable
     Node **buckets = nullptr;           ///< Buffer holding lists first nodes
 } HashTable;
 

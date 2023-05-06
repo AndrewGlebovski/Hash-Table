@@ -12,6 +12,11 @@ const size_t STR_ALIGN = 32;
 
 // #define VERIFY
 #define ALIGN_PROTECT
+#define ASM_CRC32
+
+
+/// Wrapper for find_node call
+#define FIND_NODE(...) asm_find_node(__VA_ARGS__)
 
 
 #ifdef VERIFY
@@ -92,13 +97,23 @@ inline hash_t get_hash(HashTable *table, okey_t key);
 
 
 /**
- * \brief Finds node in list by key and optionally sets previous one
+ * \brief Finds node in list by key and optionally sets previous one (MY ASSEMBLER IMPLEMENTATION)
  * \param [in]  begin   List begin 
  * \param [in]  key     Key to search for
  * \param [out] prev    If not NULL will be filled with address of the previous node
  * \return NULL if nothing found and pointer to the node otherwise
 */
-Node *find_node(Node *begin, okey_t key, Node **prev);
+extern "C" Node *asm_find_node(Node *begin, okey_t key, Node **prev);
+
+
+/**
+ * \brief Finds node in list by key and optionally sets previous one (COMPILER IMPLEMENTATION)
+ * \param [in]  begin   List begin 
+ * \param [in]  key     Key to search for
+ * \param [out] prev    If not NULL will be filled with address of the previous node
+ * \return NULL if nothing found and pointer to the node otherwise
+*/
+Node *c_find_node(Node *begin, okey_t key, Node **prev);
 
 
 /**
@@ -108,7 +123,7 @@ Node *find_node(Node *begin, okey_t key, Node **prev);
  * \warning No protection from nullptr strings
  * \return 1 - strings are equal, 0 - otherwise
 */
-int is_equal(const char *str1, const char *str2);
+extern "C" int is_equal(const char *str1, const char *str2);
 
 
 #ifdef ALIGN_PROTECT
@@ -141,6 +156,7 @@ int hashtable_constructor(HashTable *table, size_t size) {
     ASSERT(table -> buckets, ALLOC_FAIL, "Can't allocate buckets for table!\n");
     
     table -> size = size;
+    table -> count = 0;
 
     return OK;
 }
@@ -156,12 +172,15 @@ int hashtable_insert(HashTable *table, okey_t new_key, data_t new_data) {
     if (!table -> buckets[hash]) {
         table -> buckets[hash] = create_node(new_key, new_data);
         ASSERT(table -> buckets[hash], ALLOC_FAIL, "Failed to alloc new node!\n");
+
+        table -> count++;
     }
     else {
-        Node *node = find_node(table -> buckets[hash], new_key, nullptr);
+        Node *node = FIND_NODE(table -> buckets[hash], new_key, nullptr);
 
         if (node) {
             node -> data = new_data;
+            printf("New key:%s, Node key: %s, Equal: %d!\n", new_key, node -> key, is_equal(new_key, node -> key));
             return OK;
         }
         else {
@@ -171,6 +190,8 @@ int hashtable_insert(HashTable *table, okey_t new_key, data_t new_data) {
             ASSERT(table -> buckets[hash], ALLOC_FAIL, "Failed to alloc new node!\n");
 
             table -> buckets[hash] -> next = node;
+
+            table -> count++;
         }
     }
 
@@ -185,7 +206,7 @@ int hashtable_find(HashTable *table, okey_t key, data_t *data) {
     CHECK_ALIGN(key);
     ASSERT(data, INVALID_ARG, "Can't store value in null ptr!\n");
 
-    Node *node = find_node(get_list(table, key), key, nullptr);
+    Node *node = FIND_NODE(get_list(table, key), key, nullptr);
 
     if (node) {
         *data = node -> data;
@@ -203,13 +224,14 @@ int hashtable_remove(HashTable *table, okey_t key) {
     CHECK_ALIGN(key);
 
     Node *node = nullptr, *prev = nullptr;
-    node = find_node(get_list(table, key), key, &prev);
+    node = FIND_NODE(get_list(table, key), key, &prev);
 
     if (node) {
         if (prev) prev -> next = node -> next;
         else table -> buckets[get_hash(table, key)] = node -> next;
 
         free_node(node);
+        table -> count--;
     }
 
     VERIFICATE(table);
@@ -266,6 +288,7 @@ int hashtable_destructor(HashTable *table) {
     table -> buckets = nullptr;
 
     table -> size = 0;
+    table -> count = 0;
 
     return OK;
 }
@@ -316,14 +339,14 @@ size_t get_list_len(Node *node) {
 }
 
 
-__attribute__ ((noinline)) Node *find_node(Node *begin, okey_t key, Node **prev) {
-    if (prev) *prev = nullptr;
-
+__attribute__ ((noinline)) Node *c_find_node(Node *begin, okey_t key, Node **prev) {
     if (!begin) return nullptr;
 
-    for (; begin && is_equal(begin -> key, key); begin = begin -> next) {
-        if (prev) *prev = begin;
-    }
+    Node *prev_ = nullptr;
+
+    for (; begin && !is_equal(begin -> key, key); begin = begin -> next) prev_ = begin;
+
+    if (prev) *prev = prev_;
 
     return begin;
 }
@@ -331,44 +354,66 @@ __attribute__ ((noinline)) Node *find_node(Node *begin, okey_t key, Node **prev)
 
 #ifdef ALIGN_PROTECT
 
-    __attribute__ ((noinline)) int is_equal(const char *str1, const char *str2) {
-        while (1) {
-            __m256i a = _mm256_load_si256((const __m256i *) str1);
-            __m256i b = _mm256_load_si256((const __m256i *) str2);
-            
-            __m256i res = _mm256_sub_epi8(a, b);
+__attribute__ ((noinline)) int is_equal(const char *str1, const char *str2) {
+    while (1) {
+        __m256i a = _mm256_load_si256((const __m256i *) str1);
+        __m256i b = _mm256_load_si256((const __m256i *) str2);
+        
+        __m256i res = _mm256_sub_epi8(a, b);
 
-            if (!_mm256_testz_si256(res, _mm256_set1_epi32(0xFFFFFFFF))) return 0;
+        if (!_mm256_testz_si256(res, _mm256_set1_epi32(0xFFFFFFFF))) return 0;
 
-            if (str1[STR_ALIGN - 1] == 0 && str2[STR_ALIGN - 1] == 0) break;
-            
-            str1 += STR_ALIGN, str2 += STR_ALIGN;
-        };
+        if (str1[STR_ALIGN - 1] == 0 && str2[STR_ALIGN - 1] == 0) break;
+        
+        str1 += STR_ALIGN, str2 += STR_ALIGN;
+    };
 
-        return 1;
-    }
+    return 1;
+}
 
 
-    hash_t crc32_hash(okey_t key) {
-        hash_t sum = 0;
+__attribute__ ((noinline)) hash_t crc32_hash(okey_t key) {
+    hash_t sum = 0;
 
-        while (1) {
-            sum = _mm_crc32_u64(sum, *((const hash_t *) key));
-            if (!key[7]) return sum;
-            key += 8;
-        }
-    }
+#ifdef ASM_CRC32
+                
+    asm(".intel_syntax noprefix     \n\t"
+        "xor %0, %0                 \n\t"
+        ".loop:                     \n\t"
+        "crc32 %0, QWORD PTR [%1]   \n\t"
+        "cmp BYTE PTR [%1+7], 0     \n\t"
+        "je .finish                 \n\t"
+        "add %1, 8                  \n\t"
+        "jmp .loop                  \n\t"
+        ".finish:                   \n\t"
+        :"=r"(sum)
+        :"r"(key)
+        :"cc"
+    );
 
 #else
 
-    __attribute__ ((noinline)) int is_equal(const char *str1, const char *str2) {
-        return 1 - strcmp(str1, str2);
+    while (1) {
+        sum = _mm_crc32_u64(sum, *((const hash_t *) key));
+        if (!key[7]) break;
+        key += 8;
     }
 
 #endif
 
+    return sum;
+}
 
-hash_t gnu_hash(okey_t key) {
+#else
+
+__attribute__ ((noinline)) int is_equal(const char *str1, const char *str2) {
+    return !strcmp(str1, str2);
+}
+
+#endif
+
+
+__attribute__ ((noinline)) hash_t gnu_hash(okey_t key) {
     hash_t sum = 5381;
 
     for (; *key; key++)

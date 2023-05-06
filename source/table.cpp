@@ -5,7 +5,10 @@
 
 
 /// Hash table possible hash values
-const size_t TABLE_BUFFER_SIZE = 109u;
+const size_t TABLE_BUFFER_SIZE = 1009u;
+
+/// Amount of hashtable_find() to perform
+const size_t FIND_NUMBER = 10000000;
 
 
 
@@ -24,10 +27,10 @@ int main(int argc, char *argv[]) {
     hashtable_constructor(&table, TABLE_BUFFER_SIZE);
 
     insert_words(&info, &table);
-    
+
     data_t data = 0;
-    for (size_t i = 0; i < 1000000; i++)
-        hashtable_find(&table, info.ptr + (i % 58000) * 32, &data);
+    for (size_t i = 0; i < FIND_NUMBER; i++)
+        hashtable_find(&table, info.ptr + (i % (table.count - 1)) * 32, &data);
 
     hashtable_destructor(&table);
 

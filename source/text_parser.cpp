@@ -103,6 +103,15 @@ int store_words(const FileInfo *info, int output) {
         else str_len++;
     }
 
+    if (str_len) {
+        ASSERT(write(output, str_begin, str_len) != -1, WRITE_FAIL, "Failed to write to file!\n");
+
+        str_len %= WORD_ALIGN;
+        ASSERT(write(output, gap + str_len, WORD_ALIGN - str_len) != -1, WRITE_FAIL, "Failed to write to file!\n");
+
+        printf("%s\n", str_begin);
+    }
+
     return OK;
 }
 
