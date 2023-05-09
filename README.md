@@ -60,6 +60,48 @@ make
 - Сравним насколько равномерно распределены эти длины для каждой функции.
 
 
+### Анализ работы компилятора
+
+
+Рассмотрим реализацию хеш-функции, основанной на циклическом сдвиге влево. Для анализа воспользуемся сайтом *godbolt.org*. 
+
+```C
+hash_t hash_rol(okey_t *key) {
+    hash_t sum = 0;
+
+    for (const char *str = *key; *str; str++)
+        sum = ((sum << 1) | (sum >> (sizeof(hash_t) * 8 - 1))) + *str;
+
+    return (sum) ? sum : 1;
+}
+```
+
+При компиляции с флагом -O3, компилятор распознал и заменил операцию циклического сдвига одной аппаратно поддерживаемой командой *rol*, что существенно ускоряет вычисление хеша.
+
+```Assembly
+hash_rol:
+    mov     rcx, QWORD PTR [rdi]
+    movsx   rdx, BYTE PTR [rcx]
+    test    dl, dl
+    je      .L34
+    xor     eax, eax
+.L33:
+    rol     rax
+    add     rcx, 1
+    add     rax, rdx
+    movsx   rdx, BYTE PTR [rcx]
+    test    dl, dl
+    jne     .L33
+    test    rax, rax
+    mov     edx, 1
+    cmove   rax, rdx
+    ret
+.L34:
+    mov     eax, 1
+    ret
+```
+
+
 ### Результат
 
 
