@@ -41,6 +41,7 @@ conv.exe [input-filename] [output-filename]
 
 ![profile(begin)](assets/profile(begin).png "Profile data for version with no optimizations")
 
+*Incl. - все время занимаемое функцией в процентах от времени работы программы. Self - время работы функции в процентах, без учета функций, вызываемых внутри нее. Called - сколько раз была вызвана функция. Function - имя функции.*
 
 #### Версия 1 (fastcmp)
 
