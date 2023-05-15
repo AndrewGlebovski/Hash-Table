@@ -5,7 +5,7 @@
 
 
 /// Hash table possible hash values
-const size_t TABLE_BUFFER_SIZE = 1009u;
+const size_t TABLE_BUFFER_SIZE = 9973u;
 
 /// Amount of hashtable_find() to perform
 const size_t FIND_NUMBER = 10000000;
