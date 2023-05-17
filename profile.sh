@@ -23,6 +23,8 @@ perf_out="perfomance.txt"
 # For proper shared libraries addresses
 LD_BIND_NOW=1
 
+set -x
+
 # Callgrind
 valgrind --tool=callgrind --callgrind-out-file=$callgrind_out $exe_path $exe_args || exit 1
 

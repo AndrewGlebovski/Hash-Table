@@ -8,7 +8,7 @@
 const size_t TABLE_BUFFER_SIZE = 9973u;
 
 /// Amount of hashtable_find() to perform
-const size_t FIND_NUMBER = 10000000;
+const size_t FIND_NUMBER = 25000000;
 
 
 
