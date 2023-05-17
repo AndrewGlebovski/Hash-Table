@@ -20,10 +20,16 @@ asm_find_node:
     test rdi, rdi
     jne .not_null
 
+.return_null
     xor rax, rax
     ret
 
 .not_null
+    ; Check if key is nullptr 
+    mov rax, [rdi]
+    test rax, rax
+    je .return_null
+
     ; Save args to prevent them from changing on is_equal calls (r12-r15 should not change)
     push r12
     push r13
