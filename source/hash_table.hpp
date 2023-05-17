@@ -29,7 +29,7 @@ typedef struct Node {
 typedef struct {
     hash_func_t hash_func = nullptr;    ///< Pointer to hash function used by this table
     size_t size = 0;                    ///< Amount of buckets in hash table
-    Node **buckets = nullptr;           ///< Buffer holding lists first nodes
+    Node *buckets = nullptr;            ///< Buffer holding lists first nodes
 } HashTable;
 
 

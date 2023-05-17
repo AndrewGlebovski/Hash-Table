@@ -14,7 +14,7 @@ typedef struct {
 
 
 /// Hash table possible hash values
-const size_t TABLE_BUFFER_SIZE = 17u;
+const size_t TABLE_BUFFER_SIZE = 5503u;
 
 
 
@@ -38,15 +38,6 @@ int main(int argc, char *argv[]) {
         {&gnu_hash, "gnu hash"}
     };
 
-    FILE *csv_file = fopen("result.csv", "w");
-
-    fprintf(csv_file, "hash function \\ hash value");
-
-    for (size_t i = 0; i < TABLE_BUFFER_SIZE; i++)
-        fprintf(csv_file, ", %lu", i);
-
-    fputc('\n', csv_file);
-
     HashTable table = {};
 
     for (size_t func = 0; func < sizeof(func_list) / sizeof(HashFuncInfo); func++) {
@@ -54,20 +45,20 @@ int main(int argc, char *argv[]) {
 
         get_words(&info, &table);
 
-        fprintf(csv_file, "%s", func_list[func].name);
+        FILE *text_file = fopen(func_list[func].name, "w");
+
+        fprintf(text_file, "%s\n", func_list[func].name);
 
         for (size_t i = 0; i < table.size; i++)
-            fprintf(csv_file, ", %lu", get_list_len(table.buckets[i]));
+            fprintf(text_file, "%lu\n", get_list_len(table.buckets + i));
 
-        fputc('\n', csv_file);
+        fclose(text_file);
 
         hash_table_destructor(&table);
     }
 
-    fclose(csv_file);
-
     unmap_file(&info);
-
+    
     printf("Hash Table!\n");
 
     return 0;
