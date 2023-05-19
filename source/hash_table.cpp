@@ -369,18 +369,12 @@ __attribute__ ((noinline)) Node *c_find_node(Node *begin, okey_t key, Node **pre
 #ifdef ALIGN_PROTECT
 
 __attribute__ ((noinline)) int is_equal(const char *str1, const char *str2) {
-    while (1) {
-        __m256i a = _mm256_load_si256((const __m256i *) str1);
-        __m256i b = _mm256_load_si256((const __m256i *) str2);
-        
-        __m256i res = _mm256_sub_epi8(a, b);
+    __m256i a = _mm256_load_si256((const __m256i *) str1);
+    __m256i b = _mm256_load_si256((const __m256i *) str2);
+    
+    __m256i res = _mm256_sub_epi8(a, b);
 
-        if (!_mm256_testz_si256(res, _mm256_set1_epi32(0xFFFFFFFF))) return 0;
-
-        if (str1[STR_ALIGN - 1] == 0 && str2[STR_ALIGN - 1] == 0) break;
-        
-        str1 += STR_ALIGN, str2 += STR_ALIGN;
-    };
+    if (!_mm256_testz_si256(res, _mm256_set1_epi32(0xFFFFFFFF))) return 0;
 
     return 1;
 }
