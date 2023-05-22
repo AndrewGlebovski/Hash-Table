@@ -17,6 +17,12 @@ typedef struct {
 const size_t TABLE_BUFFER_SIZE = 5503u;
 
 
+/// Result directory
+#define DATA_DIR "data/"
+
+/// Result file extension
+#define DATA_EXT ".out"
+
 
 
 int main(int argc, char *argv[]) {
@@ -29,13 +35,13 @@ int main(int argc, char *argv[]) {
     mmap_file(argv[1], &info);
 
     HashFuncInfo func_list[] = {
-        {&hash_1, "return 1"},
-        {&hash_char0, "first char"},
-        {&hash_len, "len"},
-        {&hash_charsum, "char sum"},
-        {&hash_rol, "cyclic left"},
-        {&hash_ror, "cyclic right"},
-        {&gnu_hash, "gnu hash"}
+        {&hash_1,       DATA_DIR "return_1.out" DATA_EXT},
+        {&hash_char0,   DATA_DIR "first_char"   DATA_EXT},
+        {&hash_len,     DATA_DIR "length"       DATA_EXT},
+        {&hash_charsum, DATA_DIR "char_sum"     DATA_EXT},
+        {&hash_rol,     DATA_DIR "cyclic_left"  DATA_EXT},
+        {&hash_ror,     DATA_DIR "cyclic_right" DATA_EXT},
+        {&gnu_hash,     DATA_DIR "gnu_hash"     DATA_EXT}
     };
 
     HashTable table = {};
@@ -46,8 +52,6 @@ int main(int argc, char *argv[]) {
         get_words(&info, &table);
 
         FILE *text_file = fopen(func_list[func].name, "w");
-
-        fprintf(text_file, "%s\n", func_list[func].name);
 
         for (size_t i = 0; i < table.size; i++)
             fprintf(text_file, "%lu\n", get_list_len(table.buckets + i));
