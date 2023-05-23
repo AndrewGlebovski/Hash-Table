@@ -112,7 +112,7 @@ hash_rol:
     je      .L34
     xor     eax, eax
 .L33:
-    rol     rax
+    rol     rax     ; Одна команда заменяет выражение ((sum << 1) | (sum >> (sizeof(hash_t) * 8 - 1)))
     add     rcx, 1
     add     rax, rdx
     movsx   rdx, BYTE PTR [rcx]
